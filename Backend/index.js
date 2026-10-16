@@ -1,9 +1,20 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET is not set in .env');
+  process.exit(1);
+}
+
 const { initializeDatabase } = require('./config/init');
-const studentRoutes = require('./routes/studentRoutes');
+const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const courseRoutes = require('./routes/courseRoutes');
+const assignmentRoutes = require('./routes/assignmentRoutes');
+const todoRoutes = require('./routes/todoRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,9 +23,16 @@ const PORT = process.env.PORT || 5000;
 app.use(cors()); // Allow requests from React Native / Expo
 app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+// Uploaded submissions (random, unguessable file names)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── Routes ──────────────────────────────────────────────────
-app.use('/api/students', studentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/assignments', assignmentRoutes);
+app.use('/api/todos', todoRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -34,6 +52,10 @@ app.use((req, res) => {
 
 // ─── Global Error Handler ────────────────────────────────────
 app.use((err, req, res, next) => {
+  // Malformed JSON bodies
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ success: false, message: 'Invalid JSON in request body' });
+  }
   console.error('Unhandled error:', err.stack);
   res.status(500).json({
     success: false,
@@ -50,12 +72,6 @@ async function startServer() {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
       console.log(`📱 For physical devices use: http://192.168.1.61:${PORT}`);
-      console.log(`📚 API endpoints:`);
-      console.log(`   POST   /api/students      - Register a student`);
-      console.log(`   GET    /api/students      - Get all students`);
-      console.log(`   GET    /api/students/:id  - Get student by ID`);
-      console.log(`   PUT    /api/students/:id  - Update a student`);
-      console.log(`   DELETE /api/students/:id  - Delete a student`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);
