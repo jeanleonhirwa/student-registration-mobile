@@ -7,7 +7,7 @@ import { Button, Chips, ErrorState, FormError, Input, Loading, Screen } from '@/
 import { useFetch } from '@/hooks/use-fetch';
 import { api, ApiError, type AssignmentDetail, type Course } from '@/lib/api';
 import { parseInputDate, toInputString } from '@/lib/format';
-import { appendFile } from '@/lib/upload';
+import { appendFile, fileProblem } from '@/lib/upload';
 
 /** Teacher screen: create a new assignment, or edit one when `?id=` is given. */
 export default function AssignmentFormScreen() {
@@ -41,10 +41,15 @@ function AssignmentForm({ id, existing, courses }: { id?: string; existing: Assi
 
   const pickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-    if (!result.canceled) {
-      setFile(result.assets[0]);
-      setRemoveExisting(false);
+    if (result.canceled) return;
+    const problem = fileProblem(result.assets[0]);
+    if (problem) {
+      setErrors((e) => ({ ...e, file: problem }));
+      return;
     }
+    setErrors(({ file: _ignored, ...rest }) => rest);
+    setFile(result.assets[0]);
+    setRemoveExisting(false);
   };
 
   const save = async () => {
@@ -142,6 +147,11 @@ function AssignmentForm({ id, existing, courses }: { id?: string; existing: Assi
         </ThemedText>
       ) : null}
       <Button title={file ? `Selected: ${file.name}` : 'Choose document'} variant="secondary" onPress={pickFile} />
+      {errors.file ? (
+        <ThemedText type="small" themeColor="danger">
+          {errors.file}
+        </ThemedText>
+      ) : null}
       {file ? <Button title="Remove selected document" variant="ghost" onPress={() => setFile(null)} /> : null}
       {existing?.file_url && !file ? (
         <Button

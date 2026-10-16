@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth';
 import { useFetch } from '@/hooks/use-fetch';
 import { api, ApiError, type AssignmentDetail, type Submission } from '@/lib/api';
 import { dueLabel, formatDateTime } from '@/lib/format';
-import { appendFile } from '@/lib/upload';
+import { appendFile, fileProblem } from '@/lib/upload';
 
 function SubmissionView({ s, showStudent }: { s: Submission; showStudent?: boolean }) {
   return (
@@ -51,7 +51,14 @@ export default function AssignmentDetailScreen() {
 
   const pickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-    if (!result.canceled) setFile(result.assets[0]);
+    if (result.canceled) return;
+    const problem = fileProblem(result.assets[0]);
+    if (problem) {
+      setErrors({ submission: problem });
+      return;
+    }
+    setErrors({});
+    setFile(result.assets[0]);
   };
 
   const submit = async () => {

@@ -4,8 +4,11 @@ const multer = require('multer');
 const { fail } = require('../utils/response');
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
-const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_EXT = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.txt', '.zip', '.png', '.jpg', '.jpeg'];
+const MAX_SIZE = 10 * 1024 * 1024; // 10 MB (keep in sync with Frontend/src/lib/upload.ts)
+const ALLOWED_EXT = [
+  '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.csv', '.txt', '.zip',
+  '.png', '.jpg', '.jpeg', '.webp', '.heic',
+];
 
 const storage = multer.diskStorage({
   destination: UPLOAD_DIR,
@@ -28,13 +31,28 @@ const upload = multer({
   },
 });
 
-/** Accept an optional single "file" field; turn upload errors into 400 responses. */
+/**
+ * Accept an optional single "file" field; turn upload errors into 400 responses.
+ * On an error the rest of the request body is read (and discarded) before replying, because
+ * mobile HTTP clients report "network request failed" if the server answers mid-upload.
+ */
 const uploadSingle = (req, res, next) => {
   upload.single('file')(req, res, (err) => {
     if (!err) return next();
     const message =
       err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (max 10 MB)' : err.message;
-    return fail(res, 400, message);
+
+    let replied = false;
+    const reply = () => {
+      if (replied) return;
+      replied = true;
+      fail(res, 400, message);
+    };
+    req.on('end', reply);
+    req.on('close', reply);
+    req.resume();
+    // Safety net so a stalled client cannot hang the response forever.
+    setTimeout(reply, 15000).unref();
   });
 };
 
