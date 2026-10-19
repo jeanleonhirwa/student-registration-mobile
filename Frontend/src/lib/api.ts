@@ -1,14 +1,25 @@
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-// ⚠️ If your local IP changes, update the iOS address (run 'ipconfig' to find it)
-// or set EXPO_PUBLIC_API_URL in the Frontend environment.
+/**
+ * Where the backend lives. Order of preference:
+ * 1. EXPO_PUBLIC_API_URL (set it if the backend runs on another machine)
+ * 2. The computer running `expo start` — its address is read from the Expo dev server, so it
+ *    keeps working when your Wi-Fi IP changes (phones/emulators on the same network)
+ * 3. Web: localhost
+ */
+const API_PORT = 5000;
+
+function devServerHost(): string | null {
+  const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).expoGoConfig?.debuggerHost;
+  return typeof hostUri === 'string' ? hostUri.split(':')[0] : null;
+}
+
 export const BASE_URL: string =
   process.env.EXPO_PUBLIC_API_URL ??
-  Platform.select({
-    android: 'http://10.0.2.2:5000', // Android Emulator routes 10.0.2.2 → host localhost
-    ios: 'http://192.168.1.61:5000', // Your computer's LAN IP (physical device needs this)
-    default: 'http://localhost:5000', // Web
-  })!;
+  (Platform.OS === 'web'
+    ? `http://localhost:${API_PORT}`
+    : `http://${devServerHost() ?? (Platform.OS === 'android' ? '10.0.2.2' : 'localhost')}:${API_PORT}`);
 
 export class ApiError extends Error {
   status: number;

@@ -71,7 +71,7 @@ async function startServer() {
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
-      console.log(`📱 For physical devices use: http://192.168.1.61:${PORT}`);
+      console.log("📱 Phones reach this server via your computer's Wi-Fi IP (the app detects it)");
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);
