@@ -1,5 +1,7 @@
-const { Pool, types } = require('pg');
-require('dotenv').config();
+import 'dotenv/config';
+import pg from 'pg';
+
+const { Pool, types } = pg;
 
 // Return DATE columns as plain 'YYYY-MM-DD' strings (avoids timezone shifts).
 types.setTypeParser(1082, (value) => value);
@@ -22,4 +24,4 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-module.exports = pool;
+export default pool;

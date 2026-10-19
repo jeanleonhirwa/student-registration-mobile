@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const pool = require('../config/db');
-const { UPLOAD_DIR } = require('../middleware/upload');
-const { ok, created, fail, invalid } = require('../utils/response');
-const { str, parseId, parseDate, isHttpUrl } = require('../utils/validators');
+import fs from 'fs';
+import path from 'path';
+import pool from '../config/db.js';
+import { UPLOAD_DIR } from '../middleware/upload.js';
+import { ok, created, fail, invalid } from '../utils/response.js';
+import { str, parseId, parseDate, isHttpUrl } from '../utils/validators.js';
 
 const removeFile = (filePath) => {
   if (!filePath) return;
@@ -313,7 +313,7 @@ const submitAssignment = async (req, res) => {
   );
 };
 
-module.exports = {
+export {
   listAssignments,
   upcomingAssignments,
   getAssignment,

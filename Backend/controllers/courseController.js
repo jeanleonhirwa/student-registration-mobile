@@ -1,6 +1,6 @@
-const pool = require('../config/db');
-const { ok, created, fail } = require('../utils/response');
-const { str, parseId } = require('../utils/validators');
+import pool from '../config/db.js';
+import { ok, created, fail } from '../utils/response.js';
+import { str, parseId } from '../utils/validators.js';
 
 // Columns shared by list and detail queries. `enrolled` and counts are per-request.
 const COURSE_SELECT = `
@@ -127,4 +127,4 @@ const unenroll = async (req, res) => {
   return ok(res, { course_id: id }, `Unenrolled from ${rows[0].title}`);
 };
 
-module.exports = { listCourses, listCategories, getCourse, enroll, unenroll };
+export { listCourses, listCategories, getCourse, enroll, unenroll };

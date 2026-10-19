@@ -1,21 +1,23 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
+import 'dotenv/config'; // must stay first: loads .env before other modules read process.env
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { initializeDatabase } from './config/init.js';
+import authRoutes from './routes/authRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import assignmentRoutes from './routes/assignmentRoutes.js';
+import todoRoutes from './routes/todoRoutes.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('❌ JWT_SECRET is not set in .env');
   process.exit(1);
 }
 
-const { initializeDatabase } = require('./config/init');
-const authRoutes = require('./routes/authRoutes');
-const profileRoutes = require('./routes/profileRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const courseRoutes = require('./routes/courseRoutes');
-const assignmentRoutes = require('./routes/assignmentRoutes');
-const todoRoutes = require('./routes/todoRoutes');
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
 

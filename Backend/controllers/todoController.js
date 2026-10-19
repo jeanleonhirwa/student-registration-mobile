@@ -1,6 +1,6 @@
-const pool = require('../config/db');
-const { ok, created, fail, invalid } = require('../utils/response');
-const { str, parseId, parseDate } = require('../utils/validators');
+import pool from '../config/db.js';
+import { ok, created, fail, invalid } from '../utils/response.js';
+import { str, parseId, parseDate } from '../utils/validators.js';
 
 /** GET /api/todos?status=all|active|completed */
 const listTodos = async (req, res) => {
@@ -92,4 +92,4 @@ const deleteTodo = async (req, res) => {
   return ok(res, { id }, 'Task deleted');
 };
 
-module.exports = { listTodos, createTodo, updateTodo, deleteTodo };
+export { listTodos, createTodo, updateTodo, deleteTodo };

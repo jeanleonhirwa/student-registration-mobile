@@ -35,7 +35,7 @@ function parseId(value) {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-module.exports = {
+export {
   EMAIL_REGEX,
   PHONE_REGEX,
   str,

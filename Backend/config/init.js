@@ -1,4 +1,4 @@
-const pool = require('./db');
+import pool from './db.js';
 
 /**
  * Initialize the database by creating required tables if they don't exist
@@ -115,4 +115,4 @@ async function seedCourses() {
   console.log('✅ Sample courses seeded');
 }
 
-module.exports = { initializeDatabase };
+export { initializeDatabase };

@@ -1,13 +1,13 @@
-const express = require('express');
-const {
+import express from 'express';
+import {
   listCourses,
   listCategories,
   getCourse,
   enroll,
   unenroll,
-} = require('../controllers/courseController');
-const { authenticate, authorize } = require('../middleware/auth');
-const { asyncHandler } = require('../utils/response');
+} from '../controllers/courseController.js';
+import { authenticate, authorize } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/response.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -18,4 +18,4 @@ router.get('/:id', asyncHandler(getCourse));
 router.post('/:id/enroll', authorize('student'), asyncHandler(enroll));
 router.delete('/:id/enroll', authorize('student'), asyncHandler(unenroll));
 
-module.exports = router;
+export default router;

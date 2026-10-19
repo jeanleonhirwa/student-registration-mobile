@@ -1,8 +1,8 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const pool = require('../config/db');
-const { ok, created, fail, invalid } = require('../utils/response');
-const { EMAIL_REGEX, str, passwordError } = require('../utils/validators');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import pool from '../config/db.js';
+import { ok, created, fail, invalid } from '../utils/response.js';
+import { EMAIL_REGEX, str, passwordError } from '../utils/validators.js';
 
 const SALT_ROUNDS = 10;
 const ROLES = ['student', 'teacher'];
@@ -90,4 +90,4 @@ const me = async (req, res) => {
   return ok(res, publicUser(rows[0]));
 };
 
-module.exports = { register, login, me, publicUser, SALT_ROUNDS };
+export { register, login, me, publicUser, SALT_ROUNDS };

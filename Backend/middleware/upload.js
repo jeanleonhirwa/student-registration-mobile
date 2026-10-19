@@ -1,8 +1,10 @@
-const path = require('path');
-const crypto = require('crypto');
-const multer = require('multer');
-const { fail } = require('../utils/response');
+import path from 'path';
+import crypto from 'crypto';
+import multer from 'multer';
+import { fileURLToPath } from 'url';
+import { fail } from '../utils/response.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB (keep in sync with Frontend/src/lib/upload.ts)
 const ALLOWED_EXT = [
@@ -56,4 +58,4 @@ const uploadSingle = (req, res, next) => {
   });
 };
 
-module.exports = { uploadSingle, UPLOAD_DIR };
+export { uploadSingle, UPLOAD_DIR };

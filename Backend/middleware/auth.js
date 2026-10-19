@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const pool = require('../config/db');
-const { fail } = require('../utils/response');
+import jwt from 'jsonwebtoken';
+import pool from '../config/db.js';
+import { fail } from '../utils/response.js';
 
 /** Verify the Bearer JWT and attach the current user to req.user. */
 const authenticate = async (req, res, next) => {
@@ -48,4 +48,4 @@ const authorize =
     return next();
   };
 
-module.exports = { authenticate, authorize };
+export { authenticate, authorize };

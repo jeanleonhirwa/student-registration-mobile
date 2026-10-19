@@ -1,8 +1,8 @@
-const bcrypt = require('bcryptjs');
-const pool = require('../config/db');
-const { ok, fail, invalid } = require('../utils/response');
-const { EMAIL_REGEX, PHONE_REGEX, str, passwordError } = require('../utils/validators');
-const { publicUser, SALT_ROUNDS } = require('./authController');
+import bcrypt from 'bcryptjs';
+import pool from '../config/db.js';
+import { ok, fail, invalid } from '../utils/response.js';
+import { EMAIL_REGEX, PHONE_REGEX, str, passwordError } from '../utils/validators.js';
+import { publicUser, SALT_ROUNDS } from './authController.js';
 
 /** GET /api/profile */
 const getProfile = async (req, res) => {
@@ -82,4 +82,4 @@ const changePassword = async (req, res) => {
   return ok(res, undefined, 'Password changed successfully');
 };
 
-module.exports = { getProfile, updateProfile, changePassword };
+export { getProfile, updateProfile, changePassword };

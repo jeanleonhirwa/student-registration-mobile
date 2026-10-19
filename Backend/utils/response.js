@@ -28,4 +28,4 @@ const serverError = (res, error, context) => {
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-module.exports = { ok, created, fail, invalid, serverError, asyncHandler };
+export { ok, created, fail, invalid, serverError, asyncHandler };

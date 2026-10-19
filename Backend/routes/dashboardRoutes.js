@@ -1,10 +1,10 @@
-const express = require('express');
-const { getDashboard } = require('../controllers/dashboardController');
-const { authenticate } = require('../middleware/auth');
-const { asyncHandler } = require('../utils/response');
+import express from 'express';
+import { getDashboard } from '../controllers/dashboardController.js';
+import { authenticate } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/response.js';
 
 const router = express.Router();
 
 router.get('/', authenticate, asyncHandler(getDashboard));
 
-module.exports = router;
+export default router;

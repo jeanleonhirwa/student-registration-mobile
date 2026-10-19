@@ -1,5 +1,5 @@
-const express = require('express');
-const {
+import express from 'express';
+import {
   listAssignments,
   upcomingAssignments,
   getAssignment,
@@ -7,10 +7,10 @@ const {
   updateAssignment,
   deleteAssignment,
   submitAssignment,
-} = require('../controllers/assignmentController');
-const { authenticate, authorize } = require('../middleware/auth');
-const { uploadSingle } = require('../middleware/upload');
-const { asyncHandler } = require('../utils/response');
+} from '../controllers/assignmentController.js';
+import { authenticate, authorize } from '../middleware/auth.js';
+import { uploadSingle } from '../middleware/upload.js';
+import { asyncHandler } from '../utils/response.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -23,4 +23,4 @@ router.put('/:id', authorize('teacher'), uploadSingle, asyncHandler(updateAssign
 router.delete('/:id', authorize('teacher'), asyncHandler(deleteAssignment));
 router.post('/:id/submit', authorize('student'), uploadSingle, asyncHandler(submitAssignment));
 
-module.exports = router;
+export default router;

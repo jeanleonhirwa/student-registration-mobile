@@ -1,6 +1,6 @@
-const pool = require('../config/db');
-const { ok } = require('../utils/response');
-const { publicUser } = require('./authController');
+import pool from '../config/db.js';
+import { ok } from '../utils/response.js';
+import { publicUser } from './authController.js';
 
 const scalar = async (sql, params) => (await pool.query(sql, params)).rows[0].n;
 
@@ -87,4 +87,4 @@ const getDashboard = async (req, res) => {
   });
 };
 
-module.exports = { getDashboard };
+export { getDashboard };
