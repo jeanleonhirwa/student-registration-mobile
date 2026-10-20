@@ -94,6 +94,7 @@ export default function DashboardScreen() {
       ) : (
         <>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
+            <Stat value={data.stats.courses_taught} label="Courses I teach" />
             <Stat value={data.stats.assignments_created} label="Assignments created" />
             <Stat value={data.stats.submissions_received} label="Submissions received" color="success" />
           </View>

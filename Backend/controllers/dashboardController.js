@@ -11,13 +11,14 @@ const getDashboard = async (req, res) => {
   const profile = publicUser(rows[0]);
 
   if (req.user.role === 'teacher') {
-    const [assignments, submissions, dueSoon] = await Promise.all([
+    const [assignments, submissions, courseCount, dueSoon] = await Promise.all([
       scalar('SELECT COUNT(*)::int AS n FROM assignments WHERE teacher_id = $1', [userId]),
       scalar(
         `SELECT COUNT(*)::int AS n FROM submissions s
          JOIN assignments a ON a.id = s.assignment_id WHERE a.teacher_id = $1`,
         [userId]
       ),
+      scalar('SELECT COUNT(*)::int AS n FROM courses WHERE teacher_id = $1', [userId]),
       pool.query(
         `SELECT a.id, a.title, a.due_date, c.title AS course_title, c.code AS course_code,
                 (SELECT COUNT(*)::int FROM submissions s WHERE s.assignment_id = a.id) AS submission_count
@@ -30,7 +31,7 @@ const getDashboard = async (req, res) => {
     return ok(res, {
       role: 'teacher',
       profile,
-      stats: { assignments_created: assignments, submissions_received: submissions },
+      stats: { courses_taught: courseCount, assignments_created: assignments, submissions_received: submissions },
       upcoming_assignments: dueSoon.rows,
     });
   }

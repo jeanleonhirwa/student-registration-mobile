@@ -1,10 +1,12 @@
 import pool from '../config/db.js';
-import { ok, created, fail } from '../utils/response.js';
-import { str, parseId } from '../utils/validators.js';
+import { ok, created, fail, invalid } from '../utils/response.js';
+import { str, parseId, parseDate } from '../utils/validators.js';
 
 // Columns shared by list and detail queries. `enrolled` and counts are per-request.
 const COURSE_SELECT = `
-  c.id, c.code, c.title, c.description, c.category, c.instructor,
+  c.id, c.code, c.title, c.description, c.category,
+  COALESCE(t.name, c.instructor) AS instructor, c.teacher_id,
+  (c.teacher_id = $1) AS mine,
   c.start_date, c.end_date,
   (c.start_date <= CURRENT_DATE) AS started,
   (c.end_date IS NOT NULL AND c.end_date < CURRENT_DATE) AS ended,
@@ -28,7 +30,7 @@ const listCourses = async (req, res) => {
   if (search) {
     params.push(`%${search}%`);
     where.push(
-      `(c.title ILIKE $${params.length} OR c.code ILIKE $${params.length} OR c.instructor ILIKE $${params.length})`
+      `(c.title ILIKE $${params.length} OR c.code ILIKE $${params.length} OR COALESCE(t.name, c.instructor) ILIKE $${params.length})`
     );
   }
   if (category && category.toLowerCase() !== 'all') {
@@ -38,9 +40,11 @@ const listCourses = async (req, res) => {
   const enrolledSql = 'EXISTS (SELECT 1 FROM enrollments e WHERE e.course_id = c.id AND e.student_id = $1)';
   if (status === 'enrolled') where.push(enrolledSql);
   else if (status === 'available') where.push(`NOT ${enrolledSql}`);
+  else if (status === 'mine') where.push('c.teacher_id = $1');
+  else if (status === 'unassigned') where.push('c.teacher_id IS NULL');
 
   const { rows } = await pool.query(
-    `SELECT ${COURSE_SELECT} FROM courses c
+    `SELECT ${COURSE_SELECT} FROM courses c LEFT JOIN users t ON t.id = c.teacher_id
      ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
      ORDER BY c.start_date ASC, c.title ASC`,
     params
@@ -59,7 +63,7 @@ const getCourse = async (req, res) => {
   const id = parseId(req.params.id);
   if (!id) return fail(res, 400, 'Invalid course id');
 
-  const { rows } = await pool.query(`SELECT ${COURSE_SELECT} FROM courses c WHERE c.id = $2`, [
+  const { rows } = await pool.query(`SELECT ${COURSE_SELECT} FROM courses c LEFT JOIN users t ON t.id = c.teacher_id WHERE c.id = $2`, [
     req.user.id,
     id,
   ]);
@@ -127,4 +131,83 @@ const unenroll = async (req, res) => {
   return ok(res, { course_id: id }, `Unenrolled from ${rows[0].title}`);
 };
 
-export { listCourses, listCategories, getCourse, enroll, unenroll };
+/**
+ * POST /api/courses (teachers) – create a course; the creator becomes its (only) teacher.
+ * Body: { code, title, description?, category?, start_date, end_date? }
+ */
+const createCourse = async (req, res) => {
+  const code = str(req.body.code).toUpperCase();
+  const title = str(req.body.title);
+  const description = str(req.body.description);
+  const category = str(req.body.category) || 'General';
+  const start = parseDate(req.body.start_date);
+  const end = req.body.end_date ? parseDate(req.body.end_date) : null;
+
+  const errors = {};
+  if (!/^[A-Z0-9-]{2,20}$/.test(code)) errors.code = 'Code must be 2-20 letters, numbers or dashes (e.g. CS101)';
+  if (title.length < 3) errors.title = 'Title must be at least 3 characters';
+  if (!start) errors.start_date = 'A valid start date is required';
+  if (req.body.end_date && !end) errors.end_date = 'End date is not valid';
+  else if (start && end && end < start) errors.end_date = 'End date must be after the start date';
+  if (Object.keys(errors).length) return invalid(res, errors);
+
+  const day = (d) => d.toISOString().slice(0, 10);
+  const taken = await pool.query('SELECT 1 FROM courses WHERE code = $1', [code]);
+  if (taken.rows.length) return fail(res, 409, 'A course with this code already exists', { code: 'Code already in use' });
+
+  const { rows } = await pool.query(
+    `INSERT INTO courses (code, title, description, category, instructor, teacher_id, start_date, end_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+    [code, title, description || null, category, req.user.name, req.user.id, day(start), end ? day(end) : null]
+  );
+  return created(res, { id: rows[0].id }, 'Course created. You are now its teacher.');
+};
+
+/** POST /api/courses/:id/claim (teachers) – become the teacher of an unassigned course. */
+const claimCourse = async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) return fail(res, 400, 'Invalid course id');
+
+  // Single atomic UPDATE guarantees a course never ends up with two teachers.
+  const { rows } = await pool.query(
+    `UPDATE courses SET teacher_id = $1, instructor = $2
+     WHERE id = $3 AND teacher_id IS NULL RETURNING title`,
+    [req.user.id, req.user.name, id]
+  );
+  if (rows.length) return ok(res, { course_id: id }, `You now teach ${rows[0].title}`);
+
+  const exists = await pool.query('SELECT teacher_id FROM courses WHERE id = $1', [id]);
+  if (!exists.rows.length) return fail(res, 404, 'Course not found');
+  return fail(
+    res,
+    409,
+    exists.rows[0].teacher_id === req.user.id
+      ? 'You already teach this course'
+      : 'This course is already taught by another teacher'
+  );
+};
+
+/** DELETE /api/courses/:id/claim (owner teacher) – stop teaching a course. */
+const releaseCourse = async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) return fail(res, 400, 'Invalid course id');
+
+  const { rows } = await pool.query(
+    `UPDATE courses SET teacher_id = NULL, instructor = NULL
+     WHERE id = $1 AND teacher_id = $2 RETURNING title`,
+    [id, req.user.id]
+  );
+  if (!rows.length) return fail(res, 403, 'You can only release courses you teach');
+  return ok(res, { course_id: id }, `You no longer teach ${rows[0].title}`);
+};
+
+export {
+  listCourses,
+  listCategories,
+  getCourse,
+  enroll,
+  unenroll,
+  createCourse,
+  claimCourse,
+  releaseCourse,
+};

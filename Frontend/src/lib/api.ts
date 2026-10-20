@@ -103,6 +103,9 @@ export type Course = {
   description: string | null;
   category: string;
   instructor: string | null;
+  teacher_id: number | null;
+  /** The logged-in teacher teaches this course */
+  mine: boolean;
   start_date: string;
   end_date: string | null;
   started: boolean;
@@ -185,6 +188,6 @@ export type Dashboard =
   | {
       role: 'teacher';
       profile: User;
-      stats: { assignments_created: number; submissions_received: number };
+      stats: { courses_taught: number; assignments_created: number; submissions_received: number };
       upcoming_assignments: UpcomingAssignment[];
     };

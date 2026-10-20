@@ -9,7 +9,7 @@ import { useFetch } from '@/hooks/use-fetch';
 import { api, type Course } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 
-type Status = 'all' | 'enrolled' | 'available';
+type Status = 'all' | 'enrolled' | 'available' | 'mine' | 'unassigned';
 
 export default function CoursesScreen() {
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export default function CoursesScreen() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const query = new URLSearchParams({ search: debounced, category, status: isStudent ? status : 'all' });
+  const query = new URLSearchParams({ search: debounced, category, status });
   const { data: courses, error, loading, reload } = useFetch<Course[]>(`/courses?${query}`);
   const { data: categories } = useFetch<string[]>('/courses/categories');
 
@@ -41,6 +41,40 @@ export default function CoursesScreen() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const claim = async (c: Course) => {
+    setBusyId(c.id);
+    try {
+      await api.post(`/courses/${c.id}/claim`);
+      await reload();
+    } catch (e: any) {
+      Alert.alert('Could not assign course', e.message);
+      await reload();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const release = (c: Course) => {
+    Alert.alert('Stop teaching', `Release ${c.title}? It becomes available to other teachers.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Release',
+        style: 'destructive',
+        onPress: async () => {
+          setBusyId(c.id);
+          try {
+            await api.del(`/courses/${c.id}/claim`);
+            await reload();
+          } catch (e: any) {
+            Alert.alert('Could not release course', e.message);
+          } finally {
+            setBusyId(null);
+          }
+        },
+      },
+    ]);
   };
 
   const unenroll = (c: Course) => {
@@ -90,30 +124,46 @@ export default function CoursesScreen() {
         ) : (
           <Button title="Enroll" loading={busyId === c.id} onPress={() => enroll(c)} />
         )
-      ) : null}
+      ) : c.mine ? (
+        <>
+          <Badge label="You teach this course" tone="success" />
+          <Button title="Stop teaching" variant="secondary" loading={busyId === c.id} onPress={() => release(c)} />
+        </>
+      ) : c.teacher_id ? (
+        <Badge label="Taught by another teacher" />
+      ) : (
+        <Button title="Teach this course" loading={busyId === c.id} onPress={() => claim(c)} />
+      )}
     </Card>
   );
 
   return (
     <Screen onRefresh={reload}>
       <ThemedText type="subtitle">Courses</ThemedText>
+      {!isStudent ? <Button title="+ Create a course" onPress={() => router.push('/course-form')} /> : null}
       <Input value={search} onChangeText={setSearch} placeholder="Search by title, code or instructor" clearButtonMode="while-editing" />
       <Chips
         value={category}
         onChange={setCategory}
         options={[{ label: 'All categories', value: 'all' }, ...(categories ?? []).map((c) => ({ label: c, value: c }))]}
       />
-      {isStudent ? (
-        <Chips
-          value={status}
-          onChange={setStatus}
-          options={[
-            { label: 'All', value: 'all' },
-            { label: 'My courses', value: 'enrolled' },
-            { label: 'Available', value: 'available' },
-          ]}
-        />
-      ) : null}
+      <Chips
+        value={status}
+        onChange={setStatus}
+        options={
+          isStudent
+            ? [
+                { label: 'All', value: 'all' },
+                { label: 'My courses', value: 'enrolled' },
+                { label: 'Available', value: 'available' },
+              ]
+            : [
+                { label: 'All', value: 'all' },
+                { label: 'I teach', value: 'mine' },
+                { label: 'Unassigned', value: 'unassigned' },
+              ]
+        }
+      />
 
       {loading ? (
         <Loading />

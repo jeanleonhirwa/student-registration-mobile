@@ -16,6 +16,7 @@ export default function AppLayout() {
       <Stack.Screen name="course/[id]" options={{ title: 'Course details' }} />
       <Stack.Screen name="assignment/[id]" options={{ title: 'Assignment' }} />
       <Stack.Screen name="assignment-form" options={{ title: 'Assignment', presentation: 'modal' }} />
+      <Stack.Screen name="course-form" options={{ title: 'New course', presentation: 'modal' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );

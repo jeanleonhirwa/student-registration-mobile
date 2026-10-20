@@ -23,7 +23,7 @@ export default function AssignmentFormScreen() {
   const error = coursesError ?? existingError;
   if (error) return <Screen padTop={false}><ErrorState message={error} /></Screen>;
 
-  return <AssignmentForm id={id} existing={existing} courses={courses ?? []} />;
+  return <AssignmentForm id={id} existing={existing} courses={(courses ?? []).filter((c) => c.mine)} />;
 }
 
 function AssignmentForm({ id, existing, courses }: { id?: string; existing: AssignmentDetail | null; courses: Course[] }) {
@@ -97,6 +97,11 @@ function AssignmentForm({ id, existing, courses }: { id?: string; existing: Assi
       {!editing ? (
         <>
           <ThemedText type="smallBold">Course</ThemedText>
+          {courses.length === 0 ? (
+            <ThemedText type="small" themeColor="warning">
+              You don&apos;t teach any course yet. Go to Courses and tap &quot;Teach this course&quot; or create one.
+            </ThemedText>
+          ) : null}
           <Chips<string>
             value={courseId ? String(courseId) : ''}
             onChange={(v) => setCourseId(Number(v))}

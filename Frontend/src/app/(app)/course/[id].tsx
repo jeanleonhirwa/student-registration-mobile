@@ -76,6 +76,28 @@ export default function CourseDetailScreen() {
         )
       ) : null}
 
+      {user?.role === 'teacher' ? (
+        course.mine ? (
+          <>
+            <Badge label="You teach this course" tone="success" />
+            <Button
+              title="Stop teaching"
+              variant="secondary"
+              loading={busy}
+              onPress={() => run(() => api.del(`/courses/${course.id}/claim`), 'Could not release course')}
+            />
+          </>
+        ) : course.teacher_id ? (
+          <Badge label="Taught by another teacher" />
+        ) : (
+          <Button
+            title="Teach this course"
+            loading={busy}
+            onPress={() => run(() => api.post(`/courses/${course.id}/claim`), 'Could not assign course')}
+          />
+        )
+      ) : null}
+
       {course.enrolled || user?.role === 'teacher' ? (
         <>
           <SectionTitle>Assignments</SectionTitle>

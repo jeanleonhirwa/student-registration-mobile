@@ -163,10 +163,14 @@ const createAssignment = async (req, res) => {
     return invalid(res, errors);
   }
 
-  const course = await pool.query('SELECT id FROM courses WHERE id = $1', [courseId]);
+  const course = await pool.query('SELECT teacher_id FROM courses WHERE id = $1', [courseId]);
   if (course.rows.length === 0) {
     discardUpload();
     return fail(res, 404, 'Course not found');
+  }
+  if (course.rows[0].teacher_id !== req.user.id) {
+    discardUpload();
+    return fail(res, 403, 'You can only add assignments to courses you teach');
   }
 
   const { rows } = await pool.query(
